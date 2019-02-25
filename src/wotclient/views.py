@@ -4,7 +4,7 @@ from django.http import HttpResponse
 # Create your views here.
 
 def index(request):
-    return render(request, 'wot/index.html')
+    return render(request, 'wotclient/index.html')
 
 def thing_list(request):
     #TODO: Make request to thing directory and parse results to get name and ID
@@ -22,7 +22,7 @@ def thing_list(request):
     context = {
         'things': things,
     }
-    return render(request, 'wot/thing/list.html', context)
+    return render(request, 'wotclient/thing/list.html', context)
 
 def thing_single(request, thing_id):
     context = {
@@ -30,4 +30,4 @@ def thing_single(request, thing_id):
             'name': 'Test Thing',
         }
     }
-    return render(request, 'wot/thing/properties.html', context)
+    return render(request, 'wotclient/thing/properties.html', context)
