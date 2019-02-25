@@ -1,0 +1,30 @@
+{% extends 'layout/base.html' %}
+
+{% block 'content' %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active"><a href="{% url 'thing_list' %}">Things</a></li>
+            <li class="breadcrumb-item">{{ thing.name }}</li>
+        </ol>
+    </nav>
+    <h1 class="display-4">{{ thing.name }}</h1>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" href="#">Properties</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">Actions</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">Events</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">Schema</a>
+        </li>
+    </ul>
+    <div class="p-3">
+        {% block 'thing_content' %}
+
+        {% endblock %}
+    </div>
+{% endblock %}

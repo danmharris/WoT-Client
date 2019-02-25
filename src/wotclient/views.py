@@ -5,3 +5,29 @@ from django.http import HttpResponse
 
 def index(request):
     return render(request, 'wot/index.html')
+
+def thing_list(request):
+    #TODO: Make request to thing directory and parse results to get name and ID
+    things = [
+        {
+            'name': 'Thing 1',
+            'uuid': '123',
+        },
+        {
+            'name': 'Thing 2',
+            'uuid': '456',
+        }
+    ]
+
+    context = {
+        'things': things,
+    }
+    return render(request, 'wot/thing/list.html', context)
+
+def thing_single(request, thing_id):
+    context = {
+        'thing': {
+            'name': 'Test Thing',
+        }
+    }
+    return render(request, 'wot/thing/properties.html', context)
