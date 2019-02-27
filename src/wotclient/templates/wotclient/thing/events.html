@@ -1,0 +1,12 @@
+{% extends 'wotclient/layout/thing.html' %}
+
+{% block 'thing_content' %}
+    <div class="list-group">
+        {% for k,v in events.items %}
+            <div class="list-group-item">
+                <h5>{{k}}</h5>
+                <small>{{ v.description }}</small>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

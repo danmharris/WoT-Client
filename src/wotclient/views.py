@@ -1,15 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpResponse, Http404
 import requests
+import json
 
-# Create your views here.
+#TODO: Add handler for if thing directory is offline
 
 def index(request):
     return render(request, 'wotclient/index.html')
 
 def thing_list(request):
-    #TODO: Make request to thing directory and parse results to get name and ID
-
     response = requests.get('http://localhost:5002/things')
     context = {
         'things': response.json(),
@@ -55,3 +54,33 @@ def thing_single_actions(request, thing_id):
         'actions': actions_response,
     }
     return render(request, 'wotclient/thing/actions.html', context)
+
+def thing_single_events(request, thing_id):
+    thing = get_thing_or_404(thing_id)
+    events_response = requests.get('http://localhost:5002/things/{}/events'.format(thing_id)).json()
+    context = {
+        'tab': 'events',
+        'uuid': thing_id,
+        'thing': thing,
+        'events': events_response,
+    }
+    return render(request, 'wotclient/thing/events.html', context)
+
+def thing_single_schema(request, thing_id):
+    thing = get_thing_or_404(thing_id)
+
+    # TODO: Add /all interactions to thing directory to reduce request count
+    properties = requests.get('http://localhost:5002/things/{}/properties'.format(thing_id)).json()
+    actions = requests.get('http://localhost:5002/things/{}/actions'.format(thing_id)).json()
+    events = requests.get('http://localhost:5002/things/{}/events'.format(thing_id)).json()
+
+    context = {
+        'tab': 'schema',
+        'uuid': thing_id,
+        'thing': thing,
+        'thing_pretty': json.dumps(thing, indent=4),
+        'properties_pretty': json.dumps(properties, indent=4),
+        'actions_pretty': json.dumps(actions, indent=4),
+        'events_pretty': json.dumps(events, indent=4),
+    }
+    return render(request, 'wotclient/thing/schema.html', context)

@@ -1,0 +1,31 @@
+{% extends 'wotclient/layout/thing.html' %}
+
+{% block 'thing_content' %}
+<h4>Summary</h4>
+<div class="card">
+    <pre>
+        {{ thing_pretty }}
+    </pre>
+</div>
+
+<h4>Properties</h4>
+<div class="card">
+    <pre>
+        {{ properties_pretty }}
+    </pre>
+</div>
+
+<h4>Actions</h4>
+<div class="card">
+    <pre>
+        {{ actions_pretty }}
+    </pre>
+</div>
+
+<h4>Events</h4>
+<div class="card">
+    <pre>
+        {{ events_pretty }}
+    </pre>
+</div>
+{% endblock %}

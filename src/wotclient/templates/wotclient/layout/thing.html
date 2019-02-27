@@ -16,10 +16,10 @@
             <a class="nav-link  {% if tab == 'actions' %}active{% endif %}" href="{% url 'thing_single_actions' uuid %}">Actions</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link  {% if tab == 'events' %}active{% endif %}" href="#">Events</a>
+            <a class="nav-link  {% if tab == 'events' %}active{% endif %}" href="{% url 'thing_single_events' uuid %}">Events</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link  {% if tab == 'schema' %}active{% endif %}" href="#">Schema</a>
+            <a class="nav-link  {% if tab == 'schema' %}active{% endif %}" href="{% url 'thing_single_schema' uuid %}">Schema</a>
         </li>
     </ul>
     <div class="p-3">
