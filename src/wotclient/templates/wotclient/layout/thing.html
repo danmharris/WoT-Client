@@ -10,16 +10,16 @@
     <h1 class="display-4">{{ thing.name }}</h1>
     <ul class="nav nav-tabs">
         <li class="nav-item">
-            <a class="nav-link active" href="#">Properties</a>
+            <a class="nav-link {% if tab == 'properties' %}active{% endif %}" href="{% url 'thing_single_properties' uuid %}">Properties</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">Actions</a>
+            <a class="nav-link  {% if tab == 'actions' %}active{% endif %}" href="{% url 'thing_single_actions' uuid %}">Actions</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">Events</a>
+            <a class="nav-link  {% if tab == 'events' %}active{% endif %}" href="#">Events</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">Schema</a>
+            <a class="nav-link  {% if tab == 'schema' %}active{% endif %}" href="#">Schema</a>
         </li>
     </ul>
     <div class="p-3">

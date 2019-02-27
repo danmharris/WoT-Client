@@ -1,0 +1,43 @@
+{% extends 'wotclient/layout/thing.html' %}
+
+{% block 'thing_content' %}
+    <div class="list-group">
+        {% for k, v in actions.items %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>{{ k }}</h5>
+                        <small>{{ v.description }}</small>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#perform-action-{{k}}">Execute</button>
+                </div>
+                <div class="modal fade" id="perform-action-{{k}}" tabindex="-1" aria-labelledby="perform-action-{{k}}-label" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="perform-action-{{k}}-label">Perform {{k}} action on {{ thing.name }}</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                {% if v.input %}
+                                    Input Schema
+                                    <div class="card">
+                                        {{ v.input }}
+                                    </div>
+                                {% endif %}
+                                <form method="POST" class="text-center">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action_id" value="{{k}}">
+                                    <textarea type="text" name="value" class="w-100"></textarea>
+                                    <button type="submit" class="btn btn-primary mt-2">Submit</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
