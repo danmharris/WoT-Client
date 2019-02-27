@@ -10,7 +10,7 @@
         <ul class="list-group">
             {% for k, v in things.items %}
                 <li class="list-group-item list-group-item-action">
-                    <a href="{% url 'thing_single' k %}">
+                    <a href="{% url 'thing_single_properties' k %}">
                         <div class="w-100">
                             <h5>{{ v.name }}</h5>
                             <small>{{ v.description }}</small>
