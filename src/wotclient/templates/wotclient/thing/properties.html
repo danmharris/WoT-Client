@@ -1,5 +1,33 @@
 {% extends 'wotclient/layout/thing.html' %}
 
 {% block 'thing_content' %}
-Thing properties to go here
+    <div class="list-group"></div>
+        {% for k, v in properties.items %}
+            <div class="list-group-item d-flex w-100 justify-content-between align-items-center">
+                <div>
+                    <h5> {{ k }}</h5>
+                    <small>{{ v.description }}</small>
+                </div>
+                <div class="d-flex flex-column align-items-center">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="property" value="{{k}}">
+                        <button type="submit" class="btn btn-primary">Read</button>
+                    </form>
+                    {% if 'value' in v %}
+                        <div class="mt-2">
+                            Value: {{ v.value }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        <div class="d-flex justify-content-end m-3">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="property" value="all">
+                    <button type="submit" class="btn btn-primary">Read All</button>
+                </form>
+        </div>
+    </div>
 {% endblock %}

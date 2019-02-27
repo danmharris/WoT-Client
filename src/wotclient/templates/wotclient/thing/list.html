@@ -8,8 +8,15 @@
         </nav>
         <h1 class="display-4">Things on the network</h1>
         <ul class="list-group">
-            {% for thing in things %}
-                <li class="list-group-item"><a href="{% url 'thing_single' thing.uuid %}">{{ thing.name }}</a></li>
+            {% for k, v in things.items %}
+                <li class="list-group-item list-group-item-action">
+                    <a href="{% url 'thing_single' k %}">
+                        <div class="w-100">
+                            <h5>{{ v.name }}</h5>
+                            <small>{{ v.description }}</small>
+                        </div>
+                    </a>
+                </li>
             {% endfor %}
         </ul>
     {% else %}
