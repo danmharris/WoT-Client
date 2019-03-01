@@ -22,6 +22,20 @@ def get_thing_or_404(thing_id):
     else:
         return response.json()
 
+# Based off answer from https://stackoverflow.com/questions/32044/how-can-i-render-a-tree-structure-recursive-using-a-django-template
+def _pretty_print_object(value, key=None):
+    output = list()
+    if type(value) is dict:
+        output.append('&in')
+        for k, v in value.items():
+            output = output + _pretty_print_object(v, k)
+        output.append('&out')
+    elif key is not None:
+        output.append('{}: {}'.format(key, value))
+    else:
+        output.append(value)
+    return output
+
 def thing_single_properties(request, thing_id):
     thing = get_thing_or_404(thing_id)
     properties = thing.get('properties', dict())
@@ -37,7 +51,11 @@ def thing_single_properties(request, thing_id):
                 err = 'One or more properties could not be read'
             else:
                 #TODO: Parse schema to get result
-                v['value'] = value_response.text
+                try:
+                    json_response = json.loads(value_response.text)
+                    v['value'] = _pretty_print_object(json_response)
+                except:
+                    v['value'] = _pretty_print_object(value_response.text)
             properties[k] = v
     context = {
         'tab': 'properties',

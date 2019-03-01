@@ -16,7 +16,20 @@
                     </form>
                     {% if 'value' in v %}
                         <div class="mt-2">
-                            Value: {{ v.value }}
+                            Value:
+                            {% if v.value|length_is:"1" %}
+                                {{ v.value.0 }}
+                            {% else %}
+                                {% for i in v.value %}
+                                    {% if i == "&in" %}
+                                        <ul>
+                                    {% elif i == "&out" %}
+                                        </ul>
+                                    {% else %}
+                                        <li>{{ i }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
