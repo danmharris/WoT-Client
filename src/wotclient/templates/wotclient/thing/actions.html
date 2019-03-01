@@ -26,13 +26,22 @@
                                     <div class="card">
                                         {{ v.input }}
                                     </div>
+                                    <form method="POST" class="text-center">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action_id" value="{{k}}">
+                                            <textarea type="text" name="value" class="w-100"></textarea>
+                                            <button type="submit" class="btn btn-primary mt-2">Submit</button>
+                                    </form>
+                                {% else %}
+                                    Are you sure?
+                                    <form method="POST" class="text-center">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action_id" value="{{k}}">
+                                        <input type="hidden" name="value" value="">
+                                        <button type="submit" class="btn btn-primary mt-2">Yes</button>
+                                    </form>
                                 {% endif %}
-                                <form method="POST" class="text-center">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action_id" value="{{k}}">
-                                    <textarea type="text" name="value" class="w-100"></textarea>
-                                    <button type="submit" class="btn btn-primary mt-2">Submit</button>
-                                </form>
+
                             </div>
                         </div>
                     </div>

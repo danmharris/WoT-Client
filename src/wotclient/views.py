@@ -58,13 +58,13 @@ def thing_single_actions(request, thing_id):
         filtered = {k: v for k, v in actions.items() if k == request.POST['action_id']}
         for k, v in filtered.items():
             try:
-                content_type = v['forms']['0'].get('contentType', 'application/x-www-form-urlencoded')
+                content_type = v['forms'][0].get('contentType', 'application/x-www-form-urlencoded')
                 headers = {
                     'content-type': content_type
                 }
                 requests.post(v['forms'][0]['href'], headers=headers, data=request.POST['value'].encode())
-            except:
-                err = 'An error occured performing action'
+            except Exception as e:
+                err = 'An error occured performing action: ' + str(e)
             else:
                 success = 'Action performed successfully'
 

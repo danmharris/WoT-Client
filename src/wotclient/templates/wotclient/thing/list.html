@@ -1,11 +1,6 @@
 {% extends 'wotclient/layout/base.html' %}
 {% block 'content' %}
     {% if things %}
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">Things</li>
-            </ol>
-        </nav>
         <h1 class="display-4">Things on the network</h1>
         <ul class="list-group">
             {% for k, v in things.items %}
