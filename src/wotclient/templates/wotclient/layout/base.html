@@ -34,6 +34,17 @@
         </div>
     </nav>
     <div id="container">
+        {% if err %}
+            <div class="alert alert-danger" role="alert">
+                {{ err }}
+            </div>
+        {% endif %}
+        {% if success %}
+            <div class="alert alert-success" role="alert">
+                {{ success }}
+            </div>
+        {% endif %}
+
         {% block 'content' %}
 
         {% endblock %}

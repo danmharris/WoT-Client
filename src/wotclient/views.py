@@ -25,6 +25,8 @@ def get_thing_or_404(thing_id):
 def thing_single_properties(request, thing_id):
     thing = get_thing_or_404(thing_id)
     properties = thing.get('properties', dict())
+
+    err = None
     if request.method == 'POST':
         filtered = {k: v for k, v in properties.items() if k == request.POST['property'] or request.POST['property'] == 'all'}
         for k, v in filtered.items():
@@ -32,6 +34,7 @@ def thing_single_properties(request, thing_id):
                 value_response = requests.get(v['forms'][0]['href'])
             except:
                 v['value'] = '???'
+                err = 'One or more properties could not be read'
             else:
                 #TODO: Parse schema to get result
                 v['value'] = value_response.text
@@ -41,17 +44,37 @@ def thing_single_properties(request, thing_id):
         'uuid': thing_id,
         'thing': thing,
         'properties': properties,
+        'err': err,
     }
     return render(request, 'wotclient/thing/properties.html', context)
 
 def thing_single_actions(request, thing_id):
     thing = get_thing_or_404(thing_id)
     actions = thing.get('actions', dict())
+
+    err = None
+    success = None
+    if request.method == 'POST':
+        filtered = {k: v for k, v in actions.items() if k == request.POST['action_id']}
+        for k, v in filtered.items():
+            try:
+                content_type = v['forms']['0'].get('contentType', 'application/x-www-form-urlencoded')
+                headers = {
+                    'content-type': content_type
+                }
+                requests.post(v['forms'][0]['href'], headers=headers, data=request.POST['value'].encode())
+            except:
+                err = 'An error occured performing action'
+            else:
+                success = 'Action performed successfully'
+
     context = {
         'tab': 'actions',
         'uuid': thing_id,
         'thing': thing,
         'actions': actions,
+        'err': err,
+        'success': success,
     }
     return render(request, 'wotclient/thing/actions.html', context)
 
