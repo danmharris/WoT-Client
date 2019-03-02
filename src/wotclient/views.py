@@ -72,13 +72,13 @@ def _schema_to_list(schema, prefix=''):
         output.append({
             'name': prefix + '.value',
             'type': 'text',
-            'label': prefix,
+            'label': prefix[1:],
         })
     elif schema['type'] == 'number':
         output.append({
             'name': prefix + '.value',
             'type': 'number',
-            'label': prefix,
+            'label': prefix[1:],
         })
     elif schema['type'] == 'object':
         # If this is an object, generate the names for each property and append
@@ -87,6 +87,10 @@ def _schema_to_list(schema, prefix=''):
     return output
 
 def _list_to_data(data):
+    # If not a form (i.e. no input) just return
+    if 'value' in data:
+        return ''
+
     # Remove unneeded fields from POST request
     data = {k: v for k, v in data.items() if k != 'action_id' and k != 'csrfmiddlewaretoken'}
     output = dict()
@@ -116,7 +120,8 @@ def thing_single_actions(request, thing_id):
                 headers = {
                     'content-type': content_type
                 }
-                requests.post(v['forms'][0]['href'], headers=headers, data=_list_to_data(request.POST).encode())
+                response = requests.post(v['forms'][0]['href'], headers=headers, data=_list_to_data(request.POST).encode())
+                response.raise_for_status()
             except Exception as e:
                 err = 'An error occured performing action: ' + str(e)
             else:
