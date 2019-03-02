@@ -22,15 +22,14 @@
                             </div>
                             <div class="modal-body">
                                 {% if v.input %}
-                                    Input Schema
-                                    <div class="card">
-                                        {{ v.input }}
-                                    </div>
-                                    <form method="POST" class="text-center">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="action_id" value="{{k}}">
-                                            <textarea type="text" name="value" class="w-100"></textarea>
-                                            <button type="submit" class="btn btn-primary mt-2">Submit</button>
+                                    <form method="POST" class="text-center d-flex flex-column">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action_id" value="{{k}}">
+                                        {% for field in v.input_form %}
+                                            <label for="{{field.name}}">{{field.label}}</label>
+                                            <input type="{{field.type}}" name="{{field.name}}" id="{{field.name}}" class="w-100">
+                                        {% endfor %}
+                                        <button type="submit" class="btn btn-primary mt-2">Submit</button>
                                     </form>
                                 {% else %}
                                     Are you sure?

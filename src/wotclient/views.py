@@ -66,6 +66,42 @@ def thing_single_properties(request, thing_id):
     }
     return render(request, 'wotclient/thing/properties.html', context)
 
+def _schema_to_list(schema, prefix=''):
+    output = list()
+    if schema['type'] == 'string':
+        output.append({
+            'name': prefix + '.value',
+            'type': 'text',
+            'label': prefix,
+        })
+    elif schema['type'] == 'number':
+        output.append({
+            'name': prefix + '.value',
+            'type': 'number',
+            'label': prefix,
+        })
+    elif schema['type'] == 'object':
+        # If this is an object, generate the names for each property and append
+        for k, v in schema['properties'].items():
+            output = output + _schema_to_list(v, prefix+'.'+k)
+    return output
+
+def _list_to_data(data):
+    # Remove unneeded fields from POST request
+    data = {k: v for k, v in data.items() if k != 'action_id' and k != 'csrfmiddlewaretoken'}
+    output = dict()
+    for k, v in data.items():
+        keys = k.split('.')[1:-1] # Work out the path in the JSON tree to this leaf
+        final_key = keys.pop() # Find the value of the leaf key
+
+        # Go through each of the nodes and check they exist in the output structure
+        current = output
+        for key in keys:
+            current.setdefault(key, dict()) # If a node is not in the tree, add it
+            current = current['key']
+        current[final_key] = v # Insert the value at the final leaf node
+    return json.dumps(output)
+
 def thing_single_actions(request, thing_id):
     thing = get_thing_or_404(thing_id)
     actions = thing.get('actions', dict())
@@ -80,11 +116,15 @@ def thing_single_actions(request, thing_id):
                 headers = {
                     'content-type': content_type
                 }
-                requests.post(v['forms'][0]['href'], headers=headers, data=request.POST['value'].encode())
+                requests.post(v['forms'][0]['href'], headers=headers, data=_list_to_data(request.POST).encode())
             except Exception as e:
                 err = 'An error occured performing action: ' + str(e)
             else:
                 success = 'Action performed successfully'
+
+    for k, v in actions.items():
+        if 'input' in v:
+            v['input_form'] = _schema_to_list(v['input'])
 
     context = {
         'tab': 'actions',
