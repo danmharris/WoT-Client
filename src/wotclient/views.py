@@ -10,6 +10,7 @@ def index(request):
 
 def thing_list(request):
     response = requests.get('http://localhost:5002/things')
+    response.raise_for_status()
     context = {
         'things': response.json(),
     }
@@ -17,10 +18,8 @@ def thing_list(request):
 
 def get_thing_or_404(thing_id):
     response = requests.get('http://localhost:5002/things/{}'.format(thing_id))
-    if response.status_code == 404:
-        raise Http404(response.text)
-    else:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 # Based off answer from https://stackoverflow.com/questions/32044/how-can-i-render-a-tree-structure-recursive-using-a-django-template
 def _pretty_print_object(value, key=None):
