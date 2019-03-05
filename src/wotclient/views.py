@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse, Http404
+from wotclient.models import CustomAction
 import requests
 import json
 
@@ -49,7 +50,6 @@ def thing_single_properties(request, thing_id):
                 v['value'] = '???'
                 err = 'One or more properties could not be read'
             else:
-                #TODO: Parse schema to get result
                 try:
                     json_response = json.loads(value_response.text)
                     v['value'] = _pretty_print_object(json_response)
@@ -91,7 +91,7 @@ def _list_to_data(data):
         return ''
 
     # Remove unneeded fields from POST request
-    data = {k: v for k, v in data.items() if k != 'action_id' and k != 'csrfmiddlewaretoken'}
+    data = {k: v for k, v in data.items() if k[0] == '.'}
     output = dict()
     for k, v in data.items():
         keys = k.split('.')[1:-1] # Work out the path in the JSON tree to this leaf
@@ -112,29 +112,50 @@ def thing_single_actions(request, thing_id):
     err = None
     success = None
     if request.method == 'POST':
-        filtered = {k: v for k, v in actions.items() if k == request.POST['action_id']}
+        # Checks if performing custom action, and retrieves payload and action name
+        if 'custom_action_id' in request.POST:
+            custom_action = CustomAction.objects.get(id=request.POST['custom_action_id'])
+            payload = custom_action.data
+            action_id = custom_action.action_id
+        else:
+            # If not a custom action, retrieve ID and payload from POST data
+            action_id = request.POST['action_id']
+            payload = _list_to_data(request.POST)
+
+        # Make the request with the data (custom or not)
+        filtered = {k: v for k, v in actions.items() if k == action_id}
         for k, v in filtered.items():
             try:
                 content_type = v['forms'][0].get('contentType', 'application/x-www-form-urlencoded')
                 headers = {
                     'content-type': content_type
                 }
-                response = requests.post(v['forms'][0]['href'], headers=headers, data=_list_to_data(request.POST).encode())
+                response = requests.post(v['forms'][0]['href'], headers=headers, data=payload.encode())
                 response.raise_for_status()
             except Exception as e:
                 err = 'An error occured performing action: ' + str(e)
             else:
                 success = 'Action performed successfully'
 
+                # If save box checked (only shows on non-custom actions), save the data into the model
+                if request.POST.get('save', '0') == '1':
+                    custom_action = CustomAction(name=request.POST['name'], description=request.POST['description'],
+                        action_id=request.POST['action_id'], thing_uuid=thing_id, data=payload)
+                    custom_action.save()
+
+
     for k, v in actions.items():
         if 'input' in v:
             v['input_form'] = _schema_to_list(v['input'])
+
+    custom_actions = CustomAction.objects.filter(thing_uuid=thing_id)
 
     context = {
         'tab': 'actions',
         'uuid': thing_id,
         'thing': thing,
         'actions': actions,
+        'custom_actions': custom_actions,
         'err': err,
         'success': success,
     }
