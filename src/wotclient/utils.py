@@ -18,7 +18,7 @@ class RequestExceptionMiddleware:
             }, status=503)
         elif isinstance(exception, exceptions.HTTPError):
             return render(request, 'wotclient/exceptions/exception.html', context={
-                'message': exception.response.text,
+                'message': exception.response.json()['message'],
                 'status': exception.response.status_code,
             }, status=exception.response.status_code)
         else:
