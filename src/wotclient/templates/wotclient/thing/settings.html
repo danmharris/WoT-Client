@@ -1,0 +1,28 @@
+{% extends 'wotclient/layout/thing.html' %}
+
+{% block 'thing_content' %}
+    {% if methods|length > 0 %}
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="auth_method">Authorisation Method</label>
+                <select name="auth_method" id="auth_method" class="form-control">
+                    {% for method in methods %}
+                        {% if thing_method is not None and thing_method.authorization_method.id == method.id %}
+                            <option value="{{ method.id }}" selected>{{ method }} (Current)</option>
+                        {% else %}
+                            <option value="{{ method.id }}">{{ method }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+        <form method="POST" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="delete" value="">
+            <button type="submit" class="btn btn-danger">Clear</button>
+        </form>
+
+    {% endif %}
+{% endblock %}

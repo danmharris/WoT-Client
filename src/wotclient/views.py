@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse, Http404
-from wotclient.models import CustomAction
+from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 import requests
 import json
 
@@ -130,6 +130,15 @@ def thing_single_actions(request, thing_id):
                 headers = {
                     'content-type': content_type
                 }
+
+                # Add Authorization header if one has been set for this thing
+                try:
+                    auth_method = ThingAuthorization.objects.get(thing_uuid=thing_id).authorization_method
+                except:
+                    pass
+                else:
+                    headers['Authorization'] = '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials)
+
                 response = requests.post(v['forms'][0]['href'], headers=headers, data=payload.encode())
                 response.raise_for_status()
             except Exception as e:
@@ -171,6 +180,37 @@ def thing_single_events(request, thing_id):
         'events': events,
     }
     return render(request, 'wotclient/thing/events.html', context)
+
+def thing_single_settings(request, thing_id):
+    thing = get_thing_or_404(thing_id)
+
+    success = None
+    methods = AuthorizationMethod.objects.all()
+    try:
+        thing_method = ThingAuthorization.objects.get(thing_uuid=thing_id)
+    except (ThingAuthorization.DoesNotExist, ThingAuthorization.MultipleObjectsReturned):
+        thing_method = None
+
+    if request.method == 'POST':
+        if 'delete' in request.POST and thing_method is not None:
+            thing_method.delete()
+            thing_method = None
+        else:
+            if thing_method is None:
+                thing_method = ThingAuthorization(thing_uuid=thing_id)
+            thing_method.authorization_method = AuthorizationMethod.objects.get(id=request.POST['auth_method'])
+            thing_method.save()
+            success = 'Updated'
+
+    context = {
+        'tab': 'settings',
+        'uuid': thing_id,
+        'thing': thing,
+        'methods': methods,
+        'thing_method': thing_method,
+        'success': success,
+    }
+    return render(request, 'wotclient/thing/settings.html', context)
 
 def thing_single_schema(request, thing_id):
     thing = get_thing_or_404(thing_id)
