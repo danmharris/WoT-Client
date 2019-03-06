@@ -9,3 +9,7 @@ class ThingSaveActionForm(ThingActionForm):
     action_id = forms.CharField(max_length=36)
     name = forms.CharField(max_length=32)
     description = forms.CharField(max_length=255)
+
+class ThingSettingsForm(forms.Form):
+    auth_method = forms.IntegerField(required=False)
+    auth_method_delete = forms.BooleanField(required=False)

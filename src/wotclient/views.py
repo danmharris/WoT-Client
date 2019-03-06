@@ -3,7 +3,7 @@ from django.http import HttpResponse, Http404
 from django.conf import settings
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 from wotclient.thing import Thing
-from wotclient.forms import ThingActionForm, ThingSaveActionForm
+from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm
 import requests
 import json
 
@@ -161,6 +161,7 @@ def thing_single_events(request, thing_id):
 def thing_single_settings(request, thing_id):
     thing = get_thing_or_404(thing_id)
 
+    err = None
     success = None
     methods = AuthorizationMethod.objects.all()
     try:
@@ -169,15 +170,25 @@ def thing_single_settings(request, thing_id):
         thing_method = None
 
     if request.method == 'POST':
-        if 'delete' in request.POST and thing_method is not None:
-            thing_method.delete()
-            thing_method = None
+        form = ThingSettingsForm(request.POST)
+        if form.is_valid():
+            if form.cleaned_data['auth_method_delete'] == True:
+                if thing_method is not None:
+                    thing_method.delete()
+                    thing_method = None
+                success = 'Cleared'
+            else:
+                if thing_method is None:
+                    thing_method = ThingAuthorization(thing_uuid=thing_id)
+                try:
+                    thing_method.authorization_method = AuthorizationMethod.objects.get(id=form.cleaned_data['auth_method'])
+                except AuthorizationMethod.DoesNotExist:
+                    err = 'Unknown authorisation method'
+                else:
+                    thing_method.save()
+                    success = 'Updated'
         else:
-            if thing_method is None:
-                thing_method = ThingAuthorization(thing_uuid=thing_id)
-            thing_method.authorization_method = AuthorizationMethod.objects.get(id=request.POST['auth_method'])
-            thing_method.save()
-            success = 'Updated'
+            err = 'Invalid data supplied'
 
     context = {
         'tab': 'settings',
@@ -186,6 +197,7 @@ def thing_single_settings(request, thing_id):
         'methods': methods,
         'thing_method': thing_method,
         'success': success,
+        'err': err,
     }
     return render(request, 'wotclient/thing/settings.html', context)
 
