@@ -10,3 +10,8 @@ class CustomAction(models.Model):
 
     def __str__(self):
         return self.name
+
+class AuthorizationMethod(models.Model):
+    name = models.CharField(max_length=64)
+    auth_type = models.CharField(max_length=32)
+    auth_credentials = models.TextField()
