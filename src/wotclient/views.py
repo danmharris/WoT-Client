@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse, Http404
+from django.conf import settings
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 import requests
 import json
@@ -10,7 +11,9 @@ def index(request):
     return render(request, 'wotclient/index.html')
 
 def thing_list(request):
-    response = requests.get('http://localhost:5002/things')
+    response = requests.get('http://localhost:5002/things', headers={
+            'Authorization': settings.THING_DIRECTORY_KEY,
+    })
     response.raise_for_status()
     context = {
         'things': response.json(),
@@ -18,7 +21,9 @@ def thing_list(request):
     return render(request, 'wotclient/thing/list.html', context)
 
 def get_thing_or_404(thing_id):
-    response = requests.get('http://localhost:5002/things/{}'.format(thing_id))
+    response = requests.get('http://localhost:5002/things/{}'.format(thing_id), headers={
+            'Authorization': settings.THING_DIRECTORY_KEY,
+    })
     response.raise_for_status()
     return response.json()
 

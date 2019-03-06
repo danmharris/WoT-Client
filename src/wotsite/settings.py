@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+THING_DIRECTORY_KEY = 'bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkZXNjcmlwdGlvbiI6InRlc3QifQ.zcM_nmfC5f7hLt9NjZQLsiIUhwPbQdvC4TtUtHRBjns'
 
 # Application definition
 
