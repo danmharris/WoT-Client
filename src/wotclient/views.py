@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404
 from django.conf import settings
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
+from wotclient.thing import Thing
 import requests
 import json
 
@@ -27,39 +28,19 @@ def get_thing_or_404(thing_id):
     response.raise_for_status()
     return response.json()
 
-# Based off answer from https://stackoverflow.com/questions/32044/how-can-i-render-a-tree-structure-recursive-using-a-django-template
-def _pretty_print_object(value, key=None):
-    output = list()
-    if type(value) is dict:
-        output.append('&in')
-        for k, v in value.items():
-            output = output + _pretty_print_object(v, k)
-        output.append('&out')
-    elif key is not None:
-        output.append('{}: {}'.format(key, value))
-    else:
-        output.append(value)
-    return output
-
 def thing_single_properties(request, thing_id):
-    thing = get_thing_or_404(thing_id)
-    properties = thing.get('properties', dict())
+    thing = Thing(thing_id)
+    properties = thing.schema.get('properties', dict())
 
     err = None
     if request.method == 'POST':
         filtered = {k: v for k, v in properties.items() if k == request.POST['property'] or request.POST['property'] == 'all'}
         for k, v in filtered.items():
             try:
-                value_response = requests.get(v['forms'][0]['href'])
+                v['value'] = thing.read_property(k)
             except:
                 v['value'] = '???'
                 err = 'One or more properties could not be read'
-            else:
-                try:
-                    json_response = json.loads(value_response.text)
-                    v['value'] = _pretty_print_object(json_response)
-                except:
-                    v['value'] = _pretty_print_object(value_response.text)
             properties[k] = v
     context = {
         'tab': 'properties',
@@ -111,8 +92,8 @@ def _list_to_data(data):
     return json.dumps(output)
 
 def thing_single_actions(request, thing_id):
-    thing = get_thing_or_404(thing_id)
-    actions = thing.get('actions', dict())
+    thing = Thing(thing_id)
+    actions = thing.schema.get('actions', dict())
 
     err = None
     success = None
@@ -128,35 +109,17 @@ def thing_single_actions(request, thing_id):
             payload = _list_to_data(request.POST)
 
         # Make the request with the data (custom or not)
-        filtered = {k: v for k, v in actions.items() if k == action_id}
-        for k, v in filtered.items():
-            try:
-                content_type = v['forms'][0].get('contentType', 'application/x-www-form-urlencoded')
-                headers = {
-                    'content-type': content_type
-                }
-
-                # Add Authorization header if one has been set for this thing
-                try:
-                    auth_method = ThingAuthorization.objects.get(thing_uuid=thing_id).authorization_method
-                except:
-                    pass
-                else:
-                    headers['Authorization'] = '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials)
-
-                response = requests.post(v['forms'][0]['href'], headers=headers, data=payload.encode())
-                response.raise_for_status()
-            except Exception as e:
-                err = 'An error occured performing action: ' + str(e)
-            else:
-                success = 'Action performed successfully'
-
-                # If save box checked (only shows on non-custom actions), save the data into the model
-                if request.POST.get('save', '0') == '1':
-                    custom_action = CustomAction(name=request.POST['name'], description=request.POST['description'],
-                        action_id=request.POST['action_id'], thing_uuid=thing_id, data=payload)
-                    custom_action.save()
-
+        try:
+            thing.perform_action(action_id, payload)
+        except Exception as e:
+            err = 'An error occured performing action: ' + str(e)
+        else:
+            success = 'Action performed successfully'
+            # If save box checked (only shows on non-custom actions), save the data into the model
+            if request.POST.get('save', '0') == '1':
+                custom_action = CustomAction(name=request.POST['name'], description=request.POST['description'],
+                    action_id=request.POST['action_id'], thing_uuid=thing_id, data=payload)
+                custom_action.save()
 
     for k, v in actions.items():
         if 'input' in v:
@@ -167,7 +130,7 @@ def thing_single_actions(request, thing_id):
     context = {
         'tab': 'actions',
         'uuid': thing_id,
-        'thing': thing,
+        'thing': thing.schema,
         'actions': actions,
         'custom_actions': custom_actions,
         'err': err,
