@@ -1,6 +1,7 @@
 from django.conf import settings
 from wotclient.models import ThingAuthorization, AuthorizationMethod
 import requests
+import json
 
 def get_thing_or_404(thing_id):
     response = requests.get('{}/things/{}'.format(settings.THING_DIRECTORY_HOST, thing_id), headers={
@@ -39,19 +40,27 @@ class Thing(object):
 
         # Add Authorization header if one has been set for this thing
         try:
-            auth_method = ThingAuthorization.objects.get(thing_uuid=thing_id).authorization_method
+            auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
         except:
             pass
         else:
             headers['Authorization'] = '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials)
-
         response = requests.post(action['forms'][0]['href'], headers=headers, data=data.encode())
         response.raise_for_status()
     def read_property(self, property_id):
         property_schema = self.schema.get('properties', dict())
         prop = property_schema[property_id]
 
-        value_response = requests.get(prop['forms'][0]['href'])
+        try:
+            auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
+        except:
+            headers=None
+        else:
+            headers={
+                'Authorization': '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials),
+            }
+
+        value_response = requests.get(prop['forms'][0]['href'], headers=headers)
         try:
             json_response = json.loads(value_response.text)
         except:
