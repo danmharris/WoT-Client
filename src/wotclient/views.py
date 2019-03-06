@@ -3,6 +3,7 @@ from django.http import HttpResponse, Http404
 from django.conf import settings
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 from wotclient.thing import Thing
+from wotclient.forms import ThingActionForm, ThingSaveActionForm
 import requests
 import json
 
@@ -98,28 +99,36 @@ def thing_single_actions(request, thing_id):
     err = None
     success = None
     if request.method == 'POST':
-        # Checks if performing custom action, and retrieves payload and action name
-        if 'custom_action_id' in request.POST:
-            custom_action = CustomAction.objects.get(id=request.POST['custom_action_id'])
-            payload = custom_action.data
-            action_id = custom_action.action_id
+        if 'save' in request.POST:
+            form = ThingSaveActionForm(request.POST)
         else:
-            # If not a custom action, retrieve ID and payload from POST data
-            action_id = request.POST['action_id']
-            payload = _list_to_data(request.POST)
+            form = ThingActionForm(request.POST)
+        if form.is_valid():
+            # Checks if performing custom action, and retrieves payload and action name
+            if form.cleaned_data['custom_action_id'] is not None:
+                custom_action = CustomAction.objects.get(id=form.cleaned_data['custom_action_id'])
+                payload = custom_action.data
+                action_id = custom_action.action_id
+            else:
+                # If not a custom action, retrieve ID and payload from POST data
+                action_id = form.cleaned_data['action_id']
+                payload = _list_to_data(request.POST)
 
-        # Make the request with the data (custom or not)
-        try:
-            thing.perform_action(action_id, payload)
-        except Exception as e:
-            err = 'An error occured performing action: ' + str(e)
+            # Make the request with the data (custom or not)
+            try:
+                thing.perform_action(action_id, payload)
+                pass
+            except Exception as e:
+                err = 'An error occured performing action: ' + str(e)
+            else:
+                success = 'Action performed successfully'
+                # If save box checked (only shows on non-custom actions), save the data into the model
+                if form.cleaned_data['save'] == True:
+                    custom_action = CustomAction(name=form.cleaned_data['name'], description=form.cleaned_data['description'],
+                        action_id=form.cleaned_data['action_id'], thing_uuid=thing_id, data=payload)
+                    custom_action.save()
         else:
-            success = 'Action performed successfully'
-            # If save box checked (only shows on non-custom actions), save the data into the model
-            if request.POST.get('save', '0') == '1':
-                custom_action = CustomAction(name=request.POST['name'], description=request.POST['description'],
-                    action_id=request.POST['action_id'], thing_uuid=thing_id, data=payload)
-                custom_action.save()
+            err = 'Invalid data supplied'
 
     for k, v in actions.items():
         if 'input' in v:

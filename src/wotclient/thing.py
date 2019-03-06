@@ -30,8 +30,6 @@ class Thing(object):
             self.schema = get_thing_or_404(thing_id)
     def perform_action(self, action_id, data):
         action_schema = self.schema.get('actions', dict())
-        if action_id not in action_id:
-            raise KeyError('Action does not exist')
         action = action_schema[action_id]
 
         content_type = action['forms'][0].get('contentType', 'application/x-www-form-urlencoded')
@@ -51,8 +49,6 @@ class Thing(object):
         response.raise_for_status()
     def read_property(self, property_id):
         property_schema = self.schema.get('properties', dict())
-        if property_id not in property_schema:
-            raise KeyError('Property does not exist')
         prop = property_schema[property_id]
 
         value_response = requests.get(prop['forms'][0]['href'])
