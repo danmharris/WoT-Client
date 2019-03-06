@@ -7,13 +7,11 @@ from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsF
 import requests
 import json
 
-#TODO: Add handler for if thing directory is offline
-
 def index(request):
     return render(request, 'wotclient/index.html')
 
 def thing_list(request):
-    response = requests.get('http://localhost:5002/things', headers={
+    response = requests.get('{}/things'.format(settings.THING_DIRECTORY_HOST), headers={
             'Authorization': settings.THING_DIRECTORY_KEY,
     })
     response.raise_for_status()
@@ -21,13 +19,6 @@ def thing_list(request):
         'things': response.json(),
     }
     return render(request, 'wotclient/thing/list.html', context)
-
-def get_thing_or_404(thing_id):
-    response = requests.get('http://localhost:5002/things/{}'.format(thing_id), headers={
-            'Authorization': settings.THING_DIRECTORY_KEY,
-    })
-    response.raise_for_status()
-    return response.json()
 
 def thing_single_properties(request, thing_id):
     thing = Thing(thing_id)
@@ -46,7 +37,7 @@ def thing_single_properties(request, thing_id):
     context = {
         'tab': 'properties',
         'uuid': thing_id,
-        'thing': thing,
+        'thing': thing.schema,
         'properties': properties,
         'err': err,
     }
@@ -148,18 +139,18 @@ def thing_single_actions(request, thing_id):
     return render(request, 'wotclient/thing/actions.html', context)
 
 def thing_single_events(request, thing_id):
-    thing = get_thing_or_404(thing_id)
-    events = thing.get('events', dict())
+    thing = Thing(thing_id)
+    events = thing.schema.get('events', dict())
     context = {
         'tab': 'events',
         'uuid': thing_id,
-        'thing': thing,
+        'thing': thing.schema,
         'events': events,
     }
     return render(request, 'wotclient/thing/events.html', context)
 
 def thing_single_settings(request, thing_id):
-    thing = get_thing_or_404(thing_id)
+    thing = Thing(thing_id)
 
     err = None
     success = None
@@ -193,7 +184,7 @@ def thing_single_settings(request, thing_id):
     context = {
         'tab': 'settings',
         'uuid': thing_id,
-        'thing': thing,
+        'thing': thing.schema,
         'methods': methods,
         'thing_method': thing_method,
         'success': success,
@@ -202,12 +193,12 @@ def thing_single_settings(request, thing_id):
     return render(request, 'wotclient/thing/settings.html', context)
 
 def thing_single_schema(request, thing_id):
-    thing = get_thing_or_404(thing_id)
+    thing = Thing(thing_id)
 
     context = {
         'tab': 'schema',
         'uuid': thing_id,
-        'thing': thing,
-        'thing_pretty': json.dumps(thing, indent=4),
+        'thing': thing.schema,
+        'thing_pretty': json.dumps(thing.schema, indent=4),
     }
     return render(request, 'wotclient/thing/schema.html', context)

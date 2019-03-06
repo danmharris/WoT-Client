@@ -3,7 +3,7 @@ from wotclient.models import ThingAuthorization, AuthorizationMethod
 import requests
 
 def get_thing_or_404(thing_id):
-    response = requests.get('http://localhost:5002/things/{}'.format(thing_id), headers={
+    response = requests.get('{}/things/{}'.format(settings.THING_DIRECTORY_HOST, thing_id), headers={
             'Authorization': settings.THING_DIRECTORY_KEY,
     })
     response.raise_for_status()
