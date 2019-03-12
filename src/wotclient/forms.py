@@ -13,3 +13,8 @@ class ThingSaveActionForm(ThingActionForm):
 class ThingSettingsForm(forms.Form):
     auth_method = forms.IntegerField(required=False)
     auth_method_delete = forms.BooleanField(required=False)
+
+class ThingEventForm(forms.Form):
+    event_id = forms.CharField(max_length=32)
+    thing_uuid = forms.CharField(max_length=32)
+    custom_action_name = forms.CharField(max_length=32)

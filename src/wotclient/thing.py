@@ -2,6 +2,9 @@ from django.conf import settings
 from wotclient.models import ThingAuthorization, AuthorizationMethod
 import requests
 import json
+from aiocoap import Context, Message
+from aiocoap.numbers.codes import GET
+import asyncio
 
 def get_thing_or_404(thing_id):
     response = requests.get('{}/things/{}'.format(settings.THING_DIRECTORY_HOST, thing_id), headers={
@@ -67,3 +70,14 @@ class Thing(object):
             return _pretty_print_object(value_response.text)
         else:
             return _pretty_print_object(json_response)
+
+    async def observe_event(self, event_id, callback):
+        event_schema = self.schema.get('events', dict())
+        event = event_schema[event_id]
+
+        c = await Context.create_client_context()
+        message = Message(code=GET, uri=event['forms'][0]['href'])
+        message.opt.observe = 0
+        request = c.request(message, handle_blockwise=False)
+        request.observation.register_callback(callback)
+        await request.response

@@ -3,9 +3,10 @@ from django.http import HttpResponse, Http404
 from django.conf import settings
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 from wotclient.thing import Thing
-from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm
+from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm
 import requests
 import json
+import asyncio, threading
 
 def index(request):
     return render(request, 'wotclient/index.html')
@@ -141,11 +142,39 @@ def thing_single_actions(request, thing_id):
 def thing_single_events(request, thing_id):
     thing = Thing(thing_id)
     events = thing.schema.get('events', dict())
+
+    err = None
+    success = None
+    if request.method == 'POST':
+        form = ThingEventForm(request.POST)
+        if form.is_valid():
+            custom_action = CustomAction.objects.get(name=form.cleaned_data['custom_action_name'], thing_uuid=form.cleaned_data['thing_uuid'])
+            callback_thing = Thing(form.cleaned_data['thing_uuid'])
+            def callback(response):
+                try:
+                    callback_thing.perform_action(custom_action.action_id, custom_action.data)
+                except:
+                    pass
+
+            # Run subscription in new thread to prevent locking up HTTP request
+            def subscription():
+                event_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(event_loop)
+                event_loop.create_task(thing.observe_event(form.cleaned_data['event_id'], callback))
+                asyncio.get_event_loop().run_forever()
+            threading.Thread(target=subscription).start()
+
+            success = 'Event subscribed to'
+        else:
+            err = 'Invalid data supplied'
+
     context = {
         'tab': 'events',
         'uuid': thing_id,
         'thing': thing.schema,
         'events': events,
+        'err': err,
+        'success': success,
     }
     return render(request, 'wotclient/thing/events.html', context)
 

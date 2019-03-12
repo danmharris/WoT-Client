@@ -1,2 +1,3 @@
 Django==2.1.7
 requests==2.21.0
+-e git+git://github.com/chrysn/aiocoap.git#egg=aiocoap[all]
