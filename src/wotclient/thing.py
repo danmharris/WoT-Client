@@ -36,48 +36,76 @@ class Thing(object):
         action_schema = self.schema.get('actions', dict())
         action = action_schema[action_id]
 
-        content_type = action['forms'][0].get('contentType', 'application/x-www-form-urlencoded')
-        headers = {
-            'content-type': content_type
-        }
+        action['forms'] = [ f for f in action['forms'] if 'href' in f ]
+        for form in action['forms']:
+            content_type = form.get('contentType', 'application/x-www-form-urlencoded')
+            headers = {
+                'content-type': content_type
+            }
 
-        # Add Authorization header if one has been set for this thing
-        try:
-            auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
-        except:
-            pass
-        else:
-            headers['Authorization'] = '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials)
-        response = requests.post(action['forms'][0]['href'], headers=headers, data=data.encode())
-        response.raise_for_status()
+            # Add Authorization header if one has been set for this thing
+            try:
+                auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
+            except:
+                pass
+            else:
+                headers['Authorization'] = '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials)
+
+            try:
+                response = requests.post(form['href'], headers=headers, data=data.encode())
+                response.raise_for_status()
+            except:
+                continue
+
+        # We should only get here if every form raises an exception
+        raise Exception('Action could not be performed through any forms')
+
     def read_property(self, property_id):
         property_schema = self.schema.get('properties', dict())
         prop = property_schema[property_id]
 
-        try:
-            auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
-        except:
-            headers=None
-        else:
-            headers={
-                'Authorization': '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials),
-            }
+        prop['forms'] = [ f for f in prop['forms'] if 'href' in f ]
+        for form in prop['forms']:
+            # Set headers if they are required (i.e. for auth)
+            try:
+                auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
+            except:
+                headers=None
+            else:
+                headers={
+                    'Authorization': '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials),
+                }
 
-        value_response = requests.get(prop['forms'][0]['href'], headers=headers)
-        try:
-            json_response = json.loads(value_response.text)
-        except:
-            return _pretty_print_object(value_response.text)
-        else:
-            return _pretty_print_object(json_response)
+            # Attempt the request for a form. If it fails try next form
+            try:
+                value_response = requests.get(form['href'], headers=headers)
+                value_response.raise_for_status()
+            except:
+                continue
+
+            # See if the data returned is json
+            try:
+                json_response = json.loads(value_response.text)
+            except:
+                return _pretty_print_object(value_response.text)
+            else:
+                return _pretty_print_object(json_response)
+
+        # We should only get here if every form raises an exception
+        raise Exception('Property could not be read through any forms')
 
     async def observe_event(self, event_id, callback):
         event_schema = self.schema.get('events', dict())
         event = event_schema[event_id]
 
-        c = await Context.create_client_context()
-        message = Message(code=GET, uri=event['forms'][0]['href'])
-        message.opt.observe = 0
-        request = c.request(message, handle_blockwise=False)
-        request.observation.register_callback(callback)
-        await request.response
+        event['forms'] = [ f for f in event['forms'] if 'href' in f]
+        for form in event['forms']:
+            c = await Context.create_client_context()
+            message = Message(code=GET, uri=form['href'])
+            message.opt.observe = 0
+            request = c.request(message, handle_blockwise=False)
+            request.observation.register_callback(callback)
+            await request.response
+
+        # We should only get here if every form raises an exception
+        raise Exception('Event could not be subscribed to through any forms')
