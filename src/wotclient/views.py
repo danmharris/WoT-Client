@@ -1,6 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, Http404
 from django.conf import settings
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 from wotclient.thing import Thing
 from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm, ThingPropertyForm, ThingObservePropertyForm
@@ -17,9 +19,33 @@ def _subscribe(func, id, callback):
         asyncio.get_event_loop().run_forever()
     threading.Thread(target=subscription).start()
 
+def login_user(request):
+    err = None
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect(request.GET.get('next', '/'))
+        else:
+            err = 'Invalid credentials, please try again'
+
+    context = {
+        'err': err,
+    }
+    return render(request, 'wotclient/login.html', context)
+
+def logout_user(request):
+    if request.method == 'POST':
+        logout(request)
+        return redirect('login')
+    return render(request, 'wotclient/logout.html')
+
 def index(request):
     return render(request, 'wotclient/index.html')
 
+@login_required
 def thing_list(request):
     response = requests.get('{}/things'.format(settings.THING_DIRECTORY_HOST), headers={
             'Authorization': settings.THING_DIRECTORY_KEY,
@@ -30,6 +56,7 @@ def thing_list(request):
     }
     return render(request, 'wotclient/thing/list.html', context)
 
+@login_required
 def thing_single_properties(request, thing_id):
     thing = Thing(thing_id)
     properties = thing.schema.get('properties', dict())
@@ -117,6 +144,7 @@ def _list_to_data(data):
         current[final_key] = v # Insert the value at the final leaf node
     return json.dumps(output)
 
+@login_required
 def thing_single_actions(request, thing_id):
     thing = Thing(thing_id)
     actions = thing.schema.get('actions', dict())
@@ -172,6 +200,7 @@ def thing_single_actions(request, thing_id):
     }
     return render(request, 'wotclient/thing/actions.html', context)
 
+@login_required
 def thing_single_events(request, thing_id):
     thing = Thing(thing_id)
     events = thing.schema.get('events', dict())
@@ -204,6 +233,7 @@ def thing_single_events(request, thing_id):
     }
     return render(request, 'wotclient/thing/events.html', context)
 
+@login_required
 def thing_single_settings(request, thing_id):
     thing = Thing(thing_id)
 
@@ -247,6 +277,7 @@ def thing_single_settings(request, thing_id):
     }
     return render(request, 'wotclient/thing/settings.html', context)
 
+@login_required
 def thing_single_schema(request, thing_id):
     thing = Thing(thing_id)
 

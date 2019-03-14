@@ -32,6 +32,8 @@ THING_DIRECTORY_KEY = 'bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkZXNjcmlwd
 
 # Application definition
 
+LOGIN_URL = '/login'
+
 INSTALLED_APPS = [
     'wotclient.apps.WotclientConfig',
     'django.contrib.admin',
