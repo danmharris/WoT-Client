@@ -2,9 +2,9 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
-from wotclient.thing import Thing
-from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm, ThingPropertyForm, ThingObservePropertyForm
+from .models import CustomAction, AuthorizationMethod, ThingAuthorization
+from .thing import Thing
+from .forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm, ThingPropertyForm, ThingObservePropertyForm
 import requests
 import json
 import asyncio, threading
@@ -27,7 +27,7 @@ def thing_list(request):
     context = {
         'things': response.json(),
     }
-    return render(request, 'wotclient/list.html', context)
+    return render(request, 'things/list.html', context)
 
 @login_required
 def thing_single_properties(request, thing_id):
@@ -75,7 +75,7 @@ def thing_single_properties(request, thing_id):
         'err': err,
         'success': success,
     }
-    return render(request, 'wotclient/properties.html', context)
+    return render(request, 'things/properties.html', context)
 
 def _schema_to_list(schema, prefix=''):
     output = list()
@@ -171,7 +171,7 @@ def thing_single_actions(request, thing_id):
         'err': err,
         'success': success,
     }
-    return render(request, 'wotclient/actions.html', context)
+    return render(request, 'things/actions.html', context)
 
 @login_required
 def thing_single_events(request, thing_id):
@@ -204,7 +204,7 @@ def thing_single_events(request, thing_id):
         'err': err,
         'success': success,
     }
-    return render(request, 'wotclient/events.html', context)
+    return render(request, 'things/events.html', context)
 
 @login_required
 def thing_single_settings(request, thing_id):
@@ -248,7 +248,7 @@ def thing_single_settings(request, thing_id):
         'success': success,
         'err': err,
     }
-    return render(request, 'wotclient/settings.html', context)
+    return render(request, 'things/settings.html', context)
 
 @login_required
 def thing_single_schema(request, thing_id):
@@ -260,4 +260,4 @@ def thing_single_schema(request, thing_id):
         'thing': thing.schema,
         'thing_pretty': json.dumps(thing.schema, indent=4),
     }
-    return render(request, 'wotclient/schema.html', context)
+    return render(request, 'things/schema.html', context)

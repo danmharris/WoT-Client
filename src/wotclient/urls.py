@@ -1,12 +1,24 @@
-from django.urls import path
+"""wotsite URL Configuration
 
-from . import views
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/2.1/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import include, path
 
 urlpatterns = [
-    path('', views.thing_list, name='thing_list'),
-    path('<thing_id>', views.thing_single_properties, name='thing_single_properties'),
-    path('<thing_id>/actions', views.thing_single_actions, name='thing_single_actions'),
-    path('<thing_id>/events', views.thing_single_events, name='thing_single_events'),
-    path('<thing_id>/settings', views.thing_single_settings, name='thing_single_settings'),
-    path('<thing_id>/schema', views.thing_single_schema, name='thing_single_schema'),
+    path('', include('pages.urls')),
+    path('things/', include('things.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('admin/', admin.site.urls),
 ]

@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wotclient', '0002_authorizationmethod'),
+        ('things', '0002_authorizationmethod'),
     ]
 
     operations = [
@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name='ThingAuthorization',
             fields=[
                 ('thing_uuid', models.CharField(max_length=36, primary_key=True, serialize=False)),
-                ('authorization_method', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='wotclient.AuthorizationMethod')),
+                ('authorization_method', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='things.AuthorizationMethod')),
             ],
         ),
     ]

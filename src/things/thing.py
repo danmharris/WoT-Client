@@ -1,5 +1,5 @@
 from django.conf import settings
-from wotclient.models import ThingAuthorization, AuthorizationMethod
+from .models import ThingAuthorization, AuthorizationMethod
 import requests
 import json
 from aiocoap import Context, Message
