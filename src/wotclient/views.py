@@ -27,7 +27,7 @@ def thing_list(request):
     context = {
         'things': response.json(),
     }
-    return render(request, 'wotclient/thing/list.html', context)
+    return render(request, 'wotclient/list.html', context)
 
 @login_required
 def thing_single_properties(request, thing_id):
@@ -75,7 +75,7 @@ def thing_single_properties(request, thing_id):
         'err': err,
         'success': success,
     }
-    return render(request, 'wotclient/thing/properties.html', context)
+    return render(request, 'wotclient/properties.html', context)
 
 def _schema_to_list(schema, prefix=''):
     output = list()
@@ -171,7 +171,7 @@ def thing_single_actions(request, thing_id):
         'err': err,
         'success': success,
     }
-    return render(request, 'wotclient/thing/actions.html', context)
+    return render(request, 'wotclient/actions.html', context)
 
 @login_required
 def thing_single_events(request, thing_id):
@@ -204,7 +204,7 @@ def thing_single_events(request, thing_id):
         'err': err,
         'success': success,
     }
-    return render(request, 'wotclient/thing/events.html', context)
+    return render(request, 'wotclient/events.html', context)
 
 @login_required
 def thing_single_settings(request, thing_id):
@@ -248,7 +248,7 @@ def thing_single_settings(request, thing_id):
         'success': success,
         'err': err,
     }
-    return render(request, 'wotclient/thing/settings.html', context)
+    return render(request, 'wotclient/settings.html', context)
 
 @login_required
 def thing_single_schema(request, thing_id):
@@ -260,4 +260,4 @@ def thing_single_schema(request, thing_id):
         'thing': thing.schema,
         'thing_pretty': json.dumps(thing.schema, indent=4),
     }
-    return render(request, 'wotclient/thing/schema.html', context)
+    return render(request, 'wotclient/schema.html', context)
