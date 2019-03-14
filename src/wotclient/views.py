@@ -1,7 +1,6 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import HttpResponse, Http404
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 from wotclient.thing import Thing
@@ -18,29 +17,6 @@ def _subscribe(func, id, callback):
         event_loop.create_task(func(id, callback))
         asyncio.get_event_loop().run_forever()
     threading.Thread(target=subscription).start()
-
-def login_user(request):
-    err = None
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect(request.GET.get('next', '/'))
-        else:
-            err = 'Invalid credentials, please try again'
-
-    context = {
-        'err': err,
-    }
-    return render(request, 'wotclient/login.html', context)
-
-def logout_user(request):
-    if request.method == 'POST':
-        logout(request)
-        return redirect('login')
-    return render(request, 'wotclient/logout.html')
 
 def index(request):
     return render(request, 'wotclient/index.html')
