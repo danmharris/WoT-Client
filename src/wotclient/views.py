@@ -3,10 +3,19 @@ from django.http import HttpResponse, Http404
 from django.conf import settings
 from wotclient.models import CustomAction, AuthorizationMethod, ThingAuthorization
 from wotclient.thing import Thing
-from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm
+from wotclient.forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm, ThingPropertyForm, ThingObservePropertyForm
 import requests
 import json
 import asyncio, threading
+
+def _subscribe(func, id, callback):
+    # Run subscription in new thread to prevent locking up HTTP request
+    def subscription():
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
+        event_loop.create_task(func(id, callback))
+        asyncio.get_event_loop().run_forever()
+    threading.Thread(target=subscription).start()
 
 def index(request):
     return render(request, 'wotclient/index.html')
@@ -26,21 +35,45 @@ def thing_single_properties(request, thing_id):
     properties = thing.schema.get('properties', dict())
 
     err = None
+    success = None
     if request.method == 'POST':
-        filtered = {k: v for k, v in properties.items() if k == request.POST['property'] or request.POST['property'] == 'all'}
-        for k, v in filtered.items():
-            try:
-                v['value'] = thing.read_property(k)
-            except:
-                v['value'] = '???'
-                err = 'One or more properties could not be read'
-            properties[k] = v
+        if 'observe' in request.POST:
+            form = ThingObservePropertyForm(request.POST)
+        else:
+            form = ThingPropertyForm(request.POST)
+
+        if form.is_valid():
+            if form.cleaned_data['observe'] == True:
+                custom_action = CustomAction.objects.get(name=form.cleaned_data['custom_action_name'], thing_uuid=form.cleaned_data['thing_uuid'])
+                callback_thing = Thing(form.cleaned_data['thing_uuid'])
+
+                def callback(response):
+                    if form.cleaned_data['condition'] == response.payload.decode():
+                        try:
+                            callback_thing.perform_action(custom_action.action_id, custom_action.data)
+                        except:
+                            pass
+                _subscribe(thing.observe_property, form.cleaned_data['property_id'], callback)
+                success = 'Property subscribed to'
+            else:
+                filtered = {k: v for k, v in properties.items() if k == form.cleaned_data['property_id'] or form.cleaned_data['property_id'] == 'all'}
+                for k, v in filtered.items():
+                    try:
+                        v['value'] = thing.read_property(k)
+                    except:
+                        v['value'] = ['???']
+                        err = 'One or more properties could not be read'
+                    properties[k] = v
+        else:
+            err = 'Invalid data supplied'
+
     context = {
         'tab': 'properties',
         'uuid': thing_id,
         'thing': thing.schema,
         'properties': properties,
         'err': err,
+        'success': success,
     }
     return render(request, 'wotclient/thing/properties.html', context)
 
@@ -156,14 +189,7 @@ def thing_single_events(request, thing_id):
                 except:
                     pass
 
-            # Run subscription in new thread to prevent locking up HTTP request
-            def subscription():
-                event_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(event_loop)
-                event_loop.create_task(thing.observe_event(form.cleaned_data['event_id'], callback))
-                asyncio.get_event_loop().run_forever()
-            threading.Thread(target=subscription).start()
-
+            _subscribe(thing.observe_event, form.cleaned_data['event_id'], callback)
             success = 'Event subscribed to'
         else:
             err = 'Invalid data supplied'

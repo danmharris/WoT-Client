@@ -18,3 +18,12 @@ class ThingEventForm(forms.Form):
     event_id = forms.CharField(max_length=32)
     thing_uuid = forms.CharField(max_length=32)
     custom_action_name = forms.CharField(max_length=32)
+
+class ThingPropertyForm(forms.Form):
+    property_id = forms.CharField(max_length=32)
+    observe = forms.BooleanField(required=False)
+
+class ThingObservePropertyForm(ThingPropertyForm):
+    condition = forms.CharField(max_length=255)
+    thing_uuid = forms.CharField(max_length=32)
+    custom_action_name = forms.CharField(max_length=32)

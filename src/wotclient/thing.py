@@ -94,18 +94,42 @@ class Thing(object):
         # We should only get here if every form raises an exception
         raise Exception('Property could not be read through any forms')
 
+    async def _observe(self, href, callback):
+        c = await Context.create_client_context()
+        message = Message(code=GET, uri=href)
+        message.opt.observe = 0
+        request = c.request(message, handle_blockwise=False)
+        request.observation.register_callback(callback)
+        await request.response
+
+    async def observe_property(self, property_id, callback):
+        property_schema = self.schema.get('properties', dict())
+        prop = property_schema[property_id]
+
+        prop['forms'] = [ f for f in prop['forms'] if 'href' in f ]
+        for form in prop['forms']:
+            try:
+                await self._observe(form['href'], callback)
+            except:
+                continue
+            else:
+                return
+
+        # We should only get here if every form raises an exception
+        raise Exception('Property could not be observed through any forms')
+
     async def observe_event(self, event_id, callback):
         event_schema = self.schema.get('events', dict())
         event = event_schema[event_id]
 
         event['forms'] = [ f for f in event['forms'] if 'href' in f]
         for form in event['forms']:
-            c = await Context.create_client_context()
-            message = Message(code=GET, uri=form['href'])
-            message.opt.observe = 0
-            request = c.request(message, handle_blockwise=False)
-            request.observation.register_callback(callback)
-            await request.response
+            try:
+                await self._observe(form['href'], callback)
+            except:
+                continue
+            else:
+                return
 
         # We should only get here if every form raises an exception
         raise Exception('Event could not be subscribed to through any forms')
