@@ -18,9 +18,6 @@ def _subscribe(func, id, callback):
         asyncio.get_event_loop().run_forever()
     threading.Thread(target=subscription).start()
 
-def index(request):
-    return render(request, 'wotclient/index.html')
-
 @login_required
 def thing_list(request):
     response = requests.get('{}/things'.format(settings.THING_DIRECTORY_HOST), headers={
