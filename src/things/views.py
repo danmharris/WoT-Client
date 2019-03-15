@@ -18,6 +18,22 @@ def _subscribe(func, id, callback):
         asyncio.get_event_loop().run_forever()
     threading.Thread(target=subscription).start()
 
+def _get_custom_or_action(thing, action_name):
+    try:
+        custom_action = CustomAction.objects.get(name=action_name, thing_uuid=thing.thing_id)
+    except CustomAction.DoesNotExist:
+        if thing.has_action(action_name):
+            action_id = action_name
+            data = ''
+        else:
+            action_id = None
+            data = None
+    else:
+        action_id = custom_action.action_id
+        data = custom_action.data
+
+    return (action_id, data)
+
 @login_required
 def thing_list(request):
     response = requests.get('{}/things'.format(settings.THING_DIRECTORY_HOST), headers={
@@ -44,17 +60,21 @@ def thing_single_properties(request, thing_id):
 
         if form.is_valid():
             if form.cleaned_data['observe'] == True:
-                custom_action = CustomAction.objects.get(name=form.cleaned_data['custom_action_name'], thing_uuid=form.cleaned_data['thing_uuid'])
                 callback_thing = Thing(form.cleaned_data['thing_uuid'])
+                action_id, data = _get_custom_or_action(thing, form.cleaned_data['custom_action_name'])
 
                 def callback(response):
                     if form.cleaned_data['condition'] == response.payload.decode():
                         try:
-                            callback_thing.perform_action(custom_action.action_id, custom_action.data)
+                            callback_thing.perform_action(action_id, data)
                         except:
                             pass
-                _subscribe(thing.observe_property, form.cleaned_data['property_id'], callback)
-                success = 'Property subscribed to'
+
+                if action_id is not None:
+                    _subscribe(thing.observe_property, form.cleaned_data['property_id'], callback)
+                    success = 'Property subscribed to'
+                else:
+                    err = 'Action does not exist'
             else:
                 filtered = {k: v for k, v in properties.items() if k == form.cleaned_data['property_id'] or form.cleaned_data['property_id'] == 'all'}
                 for k, v in filtered.items():
@@ -183,16 +203,20 @@ def thing_single_events(request, thing_id):
     if request.method == 'POST':
         form = ThingEventForm(request.POST)
         if form.is_valid():
-            custom_action = CustomAction.objects.get(name=form.cleaned_data['custom_action_name'], thing_uuid=form.cleaned_data['thing_uuid'])
             callback_thing = Thing(form.cleaned_data['thing_uuid'])
+            action_id, data = _get_custom_or_action(callback_thing, form.cleaned_data['custom_action_name'])
+
             def callback(response):
                 try:
-                    callback_thing.perform_action(custom_action.action_id, custom_action.data)
+                    callback_thing.perform_action(action_id, data)
                 except:
                     pass
 
-            _subscribe(thing.observe_event, form.cleaned_data['event_id'], callback)
-            success = 'Event subscribed to'
+            if action_id is not None:
+                _subscribe(thing.observe_event, form.cleaned_data['event_id'], callback)
+                success = 'Event subscribed to'
+            else:
+                err = 'Invalid callback action specified'
         else:
             err = 'Invalid data supplied'
 

@@ -32,6 +32,10 @@ class Thing(object):
         self.thing_id = thing_id
         if schema is None:
             self.schema = get_thing_or_404(thing_id)
+
+    def has_action(self, action_id):
+        return action_id in self.schema.get('actions', dict()).keys()
+
     def perform_action(self, action_id, data):
         action_schema = self.schema.get('actions', dict())
         action = action_schema[action_id]
