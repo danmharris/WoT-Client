@@ -72,34 +72,48 @@ class Thing(object):
         # We should only get here if every form raises an exception
         raise Exception('Action could not be performed through any forms')
 
+    async def _coap_read_property(self, href):
+        c = await Context.create_client_context()
+        message = Message(code=GET, uri=href)
+        request = c.request(message, handle_blockwise=False)
+        response = await request.response
+        return response.payload.decode()
+
     def read_property(self, property_id):
         property_schema = self.schema.get('properties', dict())
         prop = property_schema[property_id]
 
         prop['forms'] = [ f for f in prop['forms'] if 'href' in f ]
         for form in prop['forms']:
-            # Set headers if they are required (i.e. for auth)
-            try:
-                auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
-            except:
-                headers=None
+            if 'coap://' in form['href']:
+                try:
+                    data = asyncio.new_event_loop().run_until_complete(self._coap_read_property(form['href']))
+                except:
+                    continue
             else:
-                headers={
-                    'Authorization': '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials),
-                }
+                # Set headers if they are required (i.e. for auth)
+                try:
+                    auth_method = ThingAuthorization.objects.get(thing_uuid=self.thing_id).authorization_method
+                except:
+                    headers=None
+                else:
+                    headers={
+                        'Authorization': '{} {}'.format(auth_method.auth_type, auth_method.auth_credentials),
+                    }
 
-            # Attempt the request for a form. If it fails try next form
-            try:
-                value_response = requests.get(form['href'], headers=headers)
-                value_response.raise_for_status()
-            except:
-                continue
+                # Attempt the request for a form. If it fails try next form
+                try:
+                    value_response = requests.get(form['href'], headers=headers)
+                    value_response.raise_for_status()
+                    data = value_response.text
+                except:
+                    continue
 
             # See if the data returned is json
             try:
-                json_response = json.loads(value_response.text)
+                json_response = json.loads(data)
             except:
-                return _pretty_print_object(value_response.text)
+                return _pretty_print_object(data)
             else:
                 return _pretty_print_object(json_response)
 
