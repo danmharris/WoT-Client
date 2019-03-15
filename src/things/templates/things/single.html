@@ -1,0 +1,33 @@
+{% extends 'layout/base.html' %}
+
+{% block 'content' %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active"><a href="{% url 'thing_list' %}">Things</a></li>
+            <li class="breadcrumb-item">{{ thing.name }}</li>
+        </ol>
+    </nav>
+    <h1 class="display-4">{{ thing.name }}</h1>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link {% if tab == 'properties' %}active{% endif %}" href="{% url 'thing_single_properties' uuid %}">Properties</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link  {% if tab == 'actions' %}active{% endif %}" href="{% url 'thing_single_actions' uuid %}">Actions</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link  {% if tab == 'events' %}active{% endif %}" href="{% url 'thing_single_events' uuid %}">Events</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link  {% if tab == 'settings' %}active{% endif %}" href="{% url 'thing_single_settings' uuid %}">Settings</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link  {% if tab == 'schema' %}active{% endif %}" href="{% url 'thing_single_schema' uuid %}">Schema</a>
+        </li>
+    </ul>
+    <div class="p-3">
+        {% block 'thing_content' %}
+
+        {% endblock %}
+    </div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'things/single.html' %}
+
+{% block 'thing_content' %}
+    <div class="list-group">
+        {% for k, v in actions.items %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>{{ k }}</h5>
+                        <small>{{ v.description }}</small>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#perform-action-{{k}}">Execute</button>
+                </div>
+                <div class="modal fade" id="perform-action-{{k}}" tabindex="-1" aria-labelledby="perform-action-{{k}}-label" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="perform-action-{{k}}-label">Perform {{k}} action on {{ thing.name }}</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                {% if v.input %}
+                                    <form method="POST" class="text-center d-flex flex-column">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action_id" value="{{k}}">
+                                        {% for field in v.input_form %}
+                                            <label for="{{field.name}}">{{field.label}}</label>
+                                            <input type="{{field.type}}" name="{{field.name}}" id="{{field.name}}" class="w-100">
+                                        {% endfor %}
+                                        <div class="form-check py-3">
+                                            <input class="form-check-input" type="checkbox" value="1" name="save" id="save_check">
+                                            <label class="form-check-label" for="save_check">Save?</label>
+                                        </div>
+                                        <label for="name">Name: </label>
+                                        <input type="text" name="name" id="name" class="w-100">
+                                        <label for="description">Description: </label>
+                                        <input type="text" name="description" id="description" class="w-100">
+                                        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+                                    </form>
+                                {% else %}
+                                    Are you sure?
+                                    <form method="POST" class="text-center">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action_id" value="{{k}}">
+                                        <input type="hidden" name="value" value="">
+                                        <button type="submit" class="btn btn-primary mt-2">Yes</button>
+                                    </form>
+                                {% endif %}
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <h3 class="mt-2">Custom Actions</h3>
+    <div class="list-group">
+        {% for v in custom_actions %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>{{ v.name }}</h5>
+                        <small>{{ v.description }}</small>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#perform-custom-action-{{v.id}}">Execute</button>
+                </div>
+                <div class="modal fade" id="perform-custom-action-{{v.id}}" tabindex="-1" aria-labelledby="perform-custom-action-{{v.id}}-label" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="perform-custom-action-{{v.id}}-label">Perform {{ v.name }} custom action on {{ thing.name }}</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                    Are you sure?
+                                    <form method="POST" class="text-center">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="custom_action_id" value="{{v.id}}">
+                                        <button type="submit" class="btn btn-primary mt-2">Yes</button>
+                                    </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
