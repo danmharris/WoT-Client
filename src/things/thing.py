@@ -54,6 +54,7 @@ class Thing(object):
             try:
                 response = requests.post(form['href'], headers=headers, data=data.encode())
                 response.raise_for_status()
+                return
             except:
                 continue
 

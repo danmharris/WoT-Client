@@ -29,7 +29,8 @@
                                         <div class="modal-body">
                                             <form method="POST" class="text-center d-flex flex-column">
                                                 {% csrf_token %}
-                                                <input type="hidden" name="event_id" value="{{k}}">
+                                                <input type="hidden" name="observe" value="1">
+                                                <input type="hidden" name="property_id" value="{{k}}">
                                                 <label for="field-condition">Condition</label>
                                                 <input type="text" name="condition" id="field-condition">
                                                 <label for="field-thing-uuid">Thing UUID</label>
