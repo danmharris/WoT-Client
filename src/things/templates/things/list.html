@@ -1,7 +1,10 @@
 {% extends 'layout/base.html' %}
 {% block 'content' %}
-    {% if things %}
+    <div class="d-flex justify-content-between align-items-center">
         <h1 class="display-4">Things on the network</h1>
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#add-thing">Add</button>
+    </div>
+    {% if things %}
         <ul class="list-group">
             {% for k, v in things.items %}
                 <li class="list-group-item list-group-item-action">
@@ -15,6 +18,26 @@
             {% endfor %}
         </ul>
     {% else %}
-        <h1 class="display-4">There aren't any things</h1>
+        <h2 class="display-4">There aren't any things</h1>
     {% endif %}
+    <div class="modal fade" id="add-thing" tabindex="-1" aria-labelledby="add-thing-label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="add-thing-label">Add new thing</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" class="text-center d-flex flex-column">
+                        {% csrf_token %}
+                        <label for="field-url">URL:</label>
+                        <input type="url" name="url" id="field-url">
+                        <input type="submit" class="btn btn-primary mt-2" value="Add">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
