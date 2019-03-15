@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, Http404
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -285,3 +285,15 @@ def thing_single_schema(request, thing_id):
         'thing_pretty': json.dumps(thing.schema, indent=4),
     }
     return render(request, 'things/schema.html', context)
+
+@login_required
+def thing_single_delete(request, thing_id):
+    thing = Thing(thing_id)
+
+    try:
+        thing.delete()
+    except Exception as e:
+        print(e)
+        return render(request, 'things/properties.html', {'err': 'Unable to delete Thing'})
+
+    return redirect('thing_list')

@@ -9,4 +9,5 @@ urlpatterns = [
     path('<thing_id>/events', views.thing_single_events, name='thing_single_events'),
     path('<thing_id>/settings', views.thing_single_settings, name='thing_single_settings'),
     path('<thing_id>/schema', views.thing_single_schema, name='thing_single_schema'),
+    path('<thing_id>/delete', views.thing_single_delete, name='thing_single_delete'),
 ]

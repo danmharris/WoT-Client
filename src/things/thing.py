@@ -1,5 +1,5 @@
 from django.conf import settings
-from .models import ThingAuthorization, AuthorizationMethod
+from .models import ThingAuthorization, CustomAction
 import requests
 import json
 from aiocoap import Context, Message
@@ -138,3 +138,13 @@ class Thing(object):
 
         # We should only get here if every form raises an exception
         raise Exception('Event could not be subscribed to through any forms')
+
+    def delete(self):
+        ThingAuthorization.objects.filter(thing_uuid=self.thing_id).delete()
+        CustomAction.objects.filter(thing_uuid=self.thing_id).delete()
+
+        response = requests.delete('{}/things/{}'.format(settings.THING_DIRECTORY_HOST, self.thing_id), headers={
+                'Authorization': settings.THING_DIRECTORY_KEY,
+        })
+        response.raise_for_status()
+        return response.json()

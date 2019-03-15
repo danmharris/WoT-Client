@@ -7,7 +7,13 @@
             <li class="breadcrumb-item">{{ thing.name }}</li>
         </ol>
     </nav>
-    <h1 class="display-4">{{ thing.name }}</h1>
+    <div class="d-flex justify-content-between align-items-end">
+        <h1 class="display-4">{{ thing.name }}</h1>
+        <form method="POST" action="/things/{{uuid}}/delete">
+            {% csrf_token %}
+            <input type="submit" class="btn btn-danger" value="Delete">
+        </form>
+    </div>
     <ul class="nav nav-tabs">
         <li class="nav-item">
             <a class="nav-link {% if tab == 'properties' %}active{% endif %}" href="{% url 'thing_single_properties' uuid %}">Properties</a>
