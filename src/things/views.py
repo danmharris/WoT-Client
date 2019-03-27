@@ -3,7 +3,7 @@ from django.http import HttpResponse, Http404
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from .models import CustomAction, AuthorizationMethod, ThingAuthorization
-from .thing import Thing, new_thing
+from .thing import Thing, new_things
 from .forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm, ThingPropertyForm, ThingObservePropertyForm
 import requests
 import json
@@ -37,8 +37,7 @@ def _get_custom_or_action(thing, action_name):
 @login_required
 def thing_list(request):
     if request.method == 'POST':
-        uuid = new_thing(request.POST.get('url', ''))
-        return redirect('thing_single_properties', thing_id=uuid)
+        new_things(request.POST.get('url', ''))
 
     response = requests.get('{}/things'.format(settings.THING_DIRECTORY_HOST), headers={
             'Authorization': settings.THING_DIRECTORY_KEY,

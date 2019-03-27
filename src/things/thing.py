@@ -6,12 +6,12 @@ from aiocoap import Context, Message
 from aiocoap.numbers.codes import GET
 import asyncio
 
-def new_thing(url):
+def new_things(url):
     response = requests.post('{}/things/register_url'.format(settings.THING_DIRECTORY_HOST), headers={
             'Authorization': settings.THING_DIRECTORY_KEY,
     }, json={'url':url})
     response.raise_for_status()
-    return response.json()['uuid']
+    return response.json()['uuids']
 
 def get_thing_or_404(thing_id):
     response = requests.get('{}/things/{}'.format(settings.THING_DIRECTORY_HOST, thing_id), headers={
