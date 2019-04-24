@@ -1,3 +1,6 @@
+import json
+import asyncio, threading
+import requests
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, Http404
 from django.conf import settings
@@ -5,12 +8,15 @@ from django.contrib.auth.decorators import login_required
 from .models import CustomAction, AuthorizationMethod, ThingAuthorization
 from .thing import Thing, new_things
 from .forms import ThingActionForm, ThingSaveActionForm, ThingSettingsForm, ThingEventForm, ThingPropertyForm, ThingObservePropertyForm
-import requests
-import json
-import asyncio, threading
 
 def _subscribe(func, id, callback):
-    # Run subscription in new thread to prevent locking up HTTP request
+    """Spawns a subscription in a new thread to prevent locking up HTTP request
+
+    Takes 3 arguments:
+    func - Function to spawn in new thread, must take id and callback as arguments
+    id - ID to pass to func
+    callback - To pass to func
+    """
     def subscription():
         event_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(event_loop)
@@ -19,6 +25,12 @@ def _subscribe(func, id, callback):
     threading.Thread(target=subscription).start()
 
 def _get_custom_or_action(thing, action_name):
+    """Looks up action or custom action with name, returning its definition and data (if available)
+
+    Takes 2 arguments:
+    thing - Thing description object
+    action_name - Action to look up
+    """
     try:
         custom_action = CustomAction.objects.get(name=action_name, thing_uuid=thing.thing_id)
     except CustomAction.DoesNotExist:
@@ -36,6 +48,10 @@ def _get_custom_or_action(thing, action_name):
 
 @login_required
 def thing_list(request):
+    """View to show all things in the directory
+
+    If POST, attempts to register a new thing first
+    """
     if request.method == 'POST':
         new_things(request.POST.get('url', ''))
 
@@ -50,12 +66,20 @@ def thing_list(request):
 
 @login_required
 def thing_single_properties(request, thing_id):
+    """Endpoints relating to properties on a thing
+
+    If GET will display all the properties to read
+
+    If POST will attempt to read the property with given name.
+    When observable provided in the request the property is observed
+    """
     thing = Thing(thing_id)
     properties = thing.schema.get('properties', dict())
 
     err = None
     success = None
     if request.method == 'POST':
+        # Sets up different validation rules depending on whether reading/observing
         if 'observe' in request.POST:
             form = ThingObservePropertyForm(request.POST)
         else:
@@ -63,10 +87,12 @@ def thing_single_properties(request, thing_id):
 
         if form.is_valid():
             if form.cleaned_data['observe'] == True:
+                # Observation logic
                 callback_thing = Thing(form.cleaned_data['thing_uuid'])
                 action_id, data = _get_custom_or_action(thing, form.cleaned_data['custom_action_name'])
 
                 def callback(response):
+                    """Callback to run when property changed. Will only perform action if value matches"""
                     if form.cleaned_data['condition'] == response.payload.decode():
                         try:
                             callback_thing.perform_action(action_id, data)
@@ -79,6 +105,7 @@ def thing_single_properties(request, thing_id):
                 else:
                     err = 'Action does not exist'
             else:
+                # Read logic
                 filtered = {k: v for k, v in properties.items() if k == form.cleaned_data['property_id'] or form.cleaned_data['property_id'] == 'all'}
                 for k, v in filtered.items():
                     try:
@@ -101,6 +128,10 @@ def thing_single_properties(request, thing_id):
     return render(request, 'things/properties.html', context)
 
 def _schema_to_list(schema, prefix=''):
+    """Utility function to convert JSON input schema to flat list
+
+    Can then be iterated over to create an HTML form
+    """
     output = list()
     if schema['type'] == 'string':
         output.append({
@@ -121,6 +152,7 @@ def _schema_to_list(schema, prefix=''):
     return output
 
 def _list_to_data(data):
+    """Reverse of schema_to_list, constructs a JSON object from a flat list"""
     # If not a form (i.e. no input) just return
     if 'value' in data:
         return ''
@@ -142,12 +174,17 @@ def _list_to_data(data):
 
 @login_required
 def thing_single_actions(request, thing_id):
+    """Endpoints relating to thing actions
+
+    If POST will perform an action or custom action (depending on value)
+    """
     thing = Thing(thing_id)
     actions = thing.schema.get('actions', dict())
 
     err = None
     success = None
     if request.method == 'POST':
+        # Validation rules different depending on whether custom action is created
         if 'save' in request.POST:
             form = ThingSaveActionForm(request.POST)
         else:
@@ -198,6 +235,10 @@ def thing_single_actions(request, thing_id):
 
 @login_required
 def thing_single_events(request, thing_id):
+    """Endpoints related to events
+
+    If POST request, subscribe to the event
+    """
     thing = Thing(thing_id)
     events = thing.schema.get('events', dict())
 
@@ -210,6 +251,7 @@ def thing_single_events(request, thing_id):
             action_id, data = _get_custom_or_action(callback_thing, form.cleaned_data['custom_action_name'])
 
             def callback(response):
+                """Callback to run when event is emitted. Will perform the specified action"""
                 try:
                     callback_thing.perform_action(action_id, data)
                 except:
@@ -235,6 +277,10 @@ def thing_single_events(request, thing_id):
 
 @login_required
 def thing_single_settings(request, thing_id):
+    """Endpoints related to thing settings
+
+    If POST will update the settings
+    """
     thing = Thing(thing_id)
 
     err = None
@@ -249,6 +295,7 @@ def thing_single_settings(request, thing_id):
         form = ThingSettingsForm(request.POST)
         if form.is_valid():
             if form.cleaned_data['auth_method_delete'] == True:
+                # Deletes the auth method if present in the request
                 if thing_method is not None:
                     thing_method.delete()
                     thing_method = None
@@ -279,6 +326,7 @@ def thing_single_settings(request, thing_id):
 
 @login_required
 def thing_single_schema(request, thing_id):
+    """Endpoint to display thing schema"""
     thing = Thing(thing_id)
 
     context = {
@@ -291,6 +339,7 @@ def thing_single_schema(request, thing_id):
 
 @login_required
 def thing_single_delete(request, thing_id):
+    """POST request to delete thing from directory"""
     thing = Thing(thing_id)
 
     try:
