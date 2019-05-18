@@ -89,7 +89,7 @@ def thing_single_properties(request, thing_id):
             if form.cleaned_data['observe'] == True:
                 # Observation logic
                 callback_thing = Thing(form.cleaned_data['thing_uuid'])
-                action_id, data = _get_custom_or_action(thing, form.cleaned_data['custom_action_name'])
+                action_id, data = _get_custom_or_action(callback_thing, form.cleaned_data['custom_action_name'])
 
                 def callback(response):
                     """Callback to run when property changed. Will only perform action if value matches"""
